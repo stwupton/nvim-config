@@ -106,6 +106,16 @@ local telescope_plugin = {
 	end
 }
 
+local guess_indent_plugin = {
+	'nmac427/guess-indent.nvim',
+	config = function()
+		local guess_indent = require('guess-indent')
+		guess_indent.setup({
+			override_editorconfig = false
+		})
+	end
+}
+
 -- Lazy Setup
 local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
 
@@ -128,7 +138,8 @@ lazy.setup({
 	lsp_config_plugin,
 	autocomplete_plugin,
 	autopairs_plugin,
-	telescope_plugin
+	telescope_plugin,
+	guess_indent_plugin
 }, {})
 
 -- Diagnostics
@@ -143,8 +154,10 @@ vim.diagnostic.config({
 vim.opt.scrolloff = 12
 vim.opt.title = true
 vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = false
 vim.opt.smartindent = true
-vim.opt.autoindent = true
+vim.opt.colorcolumn = '81,121'
 
 -- Keymaps
 vim.keymap.set('n', 'vv', 'v', { desc = 'Visual Mode' })
@@ -160,8 +173,10 @@ local theme_string_literal_foreground = '#ce8e98'
 local theme_constant_literal_foreground = '#cec1d9'
 local theme_comment_foreground = '#83d1aa'
 local theme_keyword_foreground = '#bdd2de'
+local theme_accent_background = '#08151d'
 
 vim.api.nvim_set_hl(0, 'Normal', { fg = theme_normal_foreground, bg = theme_normal_background })
+vim.api.nvim_set_hl(0, 'ColorColumn', { bg = theme_accent_background })
 vim.api.nvim_set_hl(0, 'Function', { fg = theme_normal_foreground })
 vim.api.nvim_set_hl(0, 'Identifier', { fg = theme_normal_foreground })
 vim.api.nvim_set_hl(0, 'Delimiter', { fg = theme_normal_foreground })
