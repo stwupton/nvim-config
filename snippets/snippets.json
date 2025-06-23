@@ -1,0 +1,23 @@
+{
+	"TODO": {
+		"prefix": "todo",
+		"body": [
+			"$LINE_COMMENT TODO(steven): $1"
+		],
+		"description": "Add a TODO comment"
+	},
+	"NOTE": {
+		"prefix": "note",
+		"body": [
+			"$LINE_COMMENT NOTE(steven): $1"
+		],
+		"description": "Add a note"
+	},
+	"!nocommit": {
+		"prefix": "!n",
+		"body": [
+			"$LINE_COMMENT !nocommit"
+		],
+		"description": "Add a !nocommit comment"
+	}
+}

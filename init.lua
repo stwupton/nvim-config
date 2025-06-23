@@ -1,4 +1,12 @@
--- Lazy Plugins
+-- General
+vim.g.mapleader = ' '
+vim.opt.scrolloff = 12
+vim.opt.title = true
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = false
+vim.opt.colorcolumn = '81,121'
+
 -- Treesitter
 local treesitter_plugin = {
 	'nvim-treesitter/nvim-treesitter',
@@ -10,7 +18,6 @@ local treesitter_plugin = {
 		local treesitter_configs = require('nvim-treesitter.configs')
 		treesitter_configs.setup({
 			highlight = { enable = true },
-			indent = { enable = true },
 			textobjects = { enable = true },
 			ensure_installed = {
 				'lua',
@@ -24,21 +31,25 @@ local treesitter_plugin = {
 	end
 }
 
+-- Lazydev
+local lazydev_plugin = {
+	"folke/lazydev.nvim",
+	ft = "lua",
+	opts = {
+		library = {
+			{ path = "${3rd}/luv/library", words = { "vim%.uv" } }
+		}
+	}
+}
+
 -- LSPs
-local lsp_config_plugin = {
+local lspconfig_plugin = {
 	'neovim/nvim-lspconfig',
 	config = function()
 		local lspconfig = require('lspconfig')
 		lspconfig.ols.setup({})
-		lspconfig.lua_ls.setup({
-			settings = {
-				Lua = {
-					workspace = {
-						library = vim.api.nvim_get_runtime_file('', true),
-					},
-				}
-			}
-		})
+		lspconfig.lua_ls.setup({})
+		lspconfig.gdscript.setup({})
 
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to Definition' })
 		vim.keymap.set('n', 'gg', vim.lsp.buf.hover, { desc = 'LSP Display Info' })
@@ -53,14 +64,22 @@ local autocomplete_plugin = {
 		'hrsh7th/cmp-nvim-lsp',
 		'hrsh7th/cmp-buffer',
 		'hrsh7th/cmp-path',
+		'L3MON4D3/LuaSnip',
+		'saadparwaiz1/cmp_luasnip',
 	},
 	config = function()
 		local cmp = require('cmp')
 		cmp.setup({
+			snippet = {
+				expand = function(args)
+					require('luasnip').lsp_expand(args.body)
+				end,
+			},
 			sources = cmp.config.sources({
 				{ name = 'nvim_lsp' },
 				{ name = 'buffer' },
 				{ name = 'path' },
+				{ name = 'luasnip' },
 			}),
 			formatting = {
 				fields = { 'kind', 'abbr' }
@@ -100,12 +119,28 @@ local telescope_plugin = {
 	},
 	branch = '0.1.x',
 	config = function()
+		local telescope = require('telescope')
+		telescope.setup({
+			defaults = {
+				file_ignore_patterns = { '.git', 'node_modules' }
+			},
+			pickers = {
+				find_files = {
+					hidden = true
+				}
+			}
+		})
+
 		local telescope_builtin = require('telescope.builtin')
-		vim.keymap.set('n', '<C-p>', telescope_builtin.git_files, { desc = 'Find Files' } )
+		vim.keymap.set('n', '<C-p>', telescope_builtin.find_files, { desc = 'Find Files' })
 		vim.keymap.set('n', '<C-f>', telescope_builtin.live_grep, { desc = 'Live Grep' } )
+		vim.keymap.set('n', '?', telescope_builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy Find' } )
+		vim.keymap.set('n', '<leader>o', telescope_builtin.lsp_document_symbols, { desc = 'Find Symbols' } )
+		vim.keymap.set('n', '<leader>b', telescope_builtin.buffers, { desc = 'Find Buffers' })
 	end
 }
 
+-- Guess Indent
 local guess_indent_plugin = {
 	'nmac427/guess-indent.nvim',
 	config = function()
@@ -113,6 +148,16 @@ local guess_indent_plugin = {
 		guess_indent.setup({
 			override_editorconfig = false
 		})
+	end
+}
+
+-- Lua Snip
+local luasnip_plugin = {
+	'L3MON4D3/LuaSnip',
+	version = 'v2.*',
+	config = function()
+		local vscode_loader = require('luasnip.loaders.from_vscode')
+		vscode_loader.load({ paths = { './snippets' } })
 	end
 }
 
@@ -135,11 +180,13 @@ vim.opt.rtp:prepend(lazypath)
 local lazy = require('lazy')
 lazy.setup({
 	treesitter_plugin,
-	lsp_config_plugin,
+	lazydev_plugin,
+	lspconfig_plugin,
 	autocomplete_plugin,
 	autopairs_plugin,
 	telescope_plugin,
-	guess_indent_plugin
+	guess_indent_plugin,
+	luasnip_plugin,
 }, {})
 
 -- Diagnostics
@@ -149,15 +196,6 @@ vim.diagnostic.config({
 	},
 	underline = true
 })
-
--- General
-vim.opt.scrolloff = 12
-vim.opt.title = true
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.expandtab = false
-vim.opt.smartindent = true
-vim.opt.colorcolumn = '81,121'
 
 -- Keymaps
 vim.keymap.set('n', 'vv', 'v', { desc = 'Visual Mode' })
