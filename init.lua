@@ -21,7 +21,9 @@ local treesitter_plugin = {
 			textobjects = { enable = true },
 			ensure_installed = {
 				'lua',
-				'odin'
+				'odin',
+				'typescript',
+				'javascript'
 			},
 			sync_install = false,
 			auto_install = true,
@@ -50,6 +52,7 @@ local lspconfig_plugin = {
 		lspconfig.ols.setup({})
 		lspconfig.lua_ls.setup({})
 		lspconfig.gdscript.setup({})
+		lspconfig.ts_ls.setup({})
 
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to Definition' })
 		vim.keymap.set('n', 'gg', vim.lsp.buf.hover, { desc = 'LSP Display Info' })
@@ -133,10 +136,13 @@ local telescope_plugin = {
 
 		local telescope_builtin = require('telescope.builtin')
 		vim.keymap.set('n', '<C-p>', telescope_builtin.find_files, { desc = 'Find Files' })
-		vim.keymap.set('n', '<C-f>', telescope_builtin.live_grep, { desc = 'Live Grep' } )
-		vim.keymap.set('n', '?', telescope_builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy Find' } )
-		vim.keymap.set('n', '<leader>o', telescope_builtin.lsp_document_symbols, { desc = 'Find Symbols' } )
+		vim.keymap.set('n', '<C-f>', telescope_builtin.live_grep, { desc = 'Live Grep' })
+		vim.keymap.set('n', '?', telescope_builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy Find' })
+		vim.keymap.set('n', '<leader>o', telescope_builtin.lsp_document_symbols, { desc = 'Find Symbols' })
 		vim.keymap.set('n', '<leader>b', telescope_builtin.buffers, { desc = 'Find Buffers' })
+		vim.keymap.set('n', '<leader>d', telescope_builtin.diagnostics, { desc = 'Find Diagnostics' })
+		vim.keymap.set('n', '<leader>h', telescope_builtin.help_tags, { desc = 'Find Help Tags' })
+		vim.keymap.set('n', 'grr', telescope_builtin.lsp_references, { desc = 'Find References' })
 	end
 }
 
@@ -158,6 +164,23 @@ local luasnip_plugin = {
 	config = function()
 		local vscode_loader = require('luasnip.loaders.from_vscode')
 		vscode_loader.load({ paths = { './snippets' } })
+	end
+}
+
+-- Gitsigns
+local gitsigns_plugin = {
+	'lewis6991/gitsigns.nvim',
+	version = "v1.*",
+	config = function()
+		local gitsigns = require('gitsigns')
+		gitsigns.setup({
+			current_line_blame = true,
+			current_line_blame_opts = {
+				virt_text = true,
+				virt_text_pos = 'right_align',
+				delay = 1000
+			}
+		})
 	end
 }
 
@@ -187,6 +210,7 @@ lazy.setup({
 	telescope_plugin,
 	guess_indent_plugin,
 	luasnip_plugin,
+	gitsigns_plugin,
 }, {})
 
 -- Diagnostics
@@ -203,6 +227,8 @@ vim.keymap.set('n', 'vl', '<S-v>', { desc = 'Visual Line Mode' })
 vim.keymap.set('n', 'vb', '<C-v>', { desc = 'Visual Block Mode' })
 vim.keymap.set('n', '<C-l>', 'gt', { desc = 'Next Tab' })
 vim.keymap.set('n', '<C-h>', 'gT', { desc = 'Previous Tab' })
+vim.keymap.set('n', 'j', 'gj', { desc = 'Move Down (including wrapped single line)' })
+vim.keymap.set('n', 'k', 'gk', { desc = 'Move Up (including wrapped single line)' })
 
 -- Theme
 local theme_normal_background = '#0a1924'
