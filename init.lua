@@ -1,3 +1,6 @@
+-- Imports
+local utils = require('utils')
+
 -- General
 vim.g.mapleader = ' '
 vim.opt.scrolloff = 12
@@ -6,6 +9,7 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = false
 vim.opt.colorcolumn = '81,121'
+vim.opt.number = true
 
 -- Treesitter
 local treesitter_plugin = {
@@ -53,6 +57,7 @@ local lspconfig_plugin = {
 		lspconfig.lua_ls.setup({})
 		lspconfig.gdscript.setup({})
 		lspconfig.ts_ls.setup({})
+		lspconfig.somesass_ls.setup({})
 
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to Definition' })
 		vim.keymap.set('n', 'gg', vim.lsp.buf.hover, { desc = 'LSP Display Info' })
@@ -125,11 +130,12 @@ local telescope_plugin = {
 		local telescope = require('telescope')
 		telescope.setup({
 			defaults = {
-				file_ignore_patterns = { '.git', 'node_modules' }
+				file_ignore_patterns = { '.git[\\/].*', 'node_modules' }
 			},
 			pickers = {
 				find_files = {
-					hidden = true
+					hidden = true,
+					no_ignore = true
 				}
 			}
 		})
@@ -140,7 +146,7 @@ local telescope_plugin = {
 		vim.keymap.set('n', '?', telescope_builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy Find' })
 		vim.keymap.set('n', '<leader>o', telescope_builtin.lsp_document_symbols, { desc = 'Find Symbols' })
 		vim.keymap.set('n', '<leader>b', telescope_builtin.buffers, { desc = 'Find Buffers' })
-		vim.keymap.set('n', '<leader>d', telescope_builtin.diagnostics, { desc = 'Find Diagnostics' })
+		vim.keymap.set('n', '<leader>e', telescope_builtin.diagnostics, { desc = 'Find Diagnostics' })
 		vim.keymap.set('n', '<leader>h', telescope_builtin.help_tags, { desc = 'Find Help Tags' })
 		vim.keymap.set('n', 'grr', telescope_builtin.lsp_references, { desc = 'Find References' })
 	end
@@ -184,6 +190,90 @@ local gitsigns_plugin = {
 	end
 }
 
+-- DAP
+local dap_plugin = {
+	'mfussenegger/nvim-dap',
+	version = '0.11.*',
+	config = function()
+		local dap = require('dap')
+		local settings_ok, settings = pcall(require, 'settings')
+
+		dap.set_log_level('TRACE')
+
+		if settings_ok then
+			if not utils.is_empty(settings.vscode_open_debug_path) then
+				dap.adapters.cppdbg = {
+					id = 'cppdbg',
+					type = 'executable',
+					command = settings.vscode_open_debug_path,
+					options = {
+						detached = false
+					}
+				}
+			end
+
+			if not utils.is_empty(settings.vscode_chrome_debug_path) then
+				dap.adapters.chrome = {
+					type = 'executable',
+					command = 'node',
+					args = { settings.vscode_chrome_debug_path }
+				}
+			end
+		end
+
+		vim.keymap.set('n', '<leader>dt', dap.toggle_breakpoint, { desc = 'Toggle Breakpoint' })
+		vim.keymap.set('n', '<leader>dc', dap.continue, { desc = 'Debug Continue' })
+	end
+}
+
+-- DAP UI
+local dapui_plugin = {
+	'rcarriga/nvim-dap-ui',
+	dependencies = {
+		'nvim-neotest/nvim-nio',
+		'mfussenegger/nvim-dap',
+	},
+	config = function()
+		local dapui = require('dapui')
+		dapui.setup()
+
+		vim.keymap.set('n', '<leader>dd', dapui.open, { desc = 'Open DAP UI' })
+		vim.keymap.set('n', '<leader>dq', dapui.close, { desc = 'Close DAP UI' })
+
+		local dap = require('dap')
+
+		dap.listeners.before.attach.dapui_config = function()
+			dapui.open()
+		end
+
+		dap.listeners.before.launch.dapui_config = function()
+			dapui.open()
+		end
+
+		dap.listeners.before.event_terminated.dapui_config = function()
+			dapui.close()
+		end
+
+		dap.listeners.before.event_exited.dapui_config = function()
+			dapui.close()
+		end
+	end
+}
+
+-- LSP Signature
+local lsp_signature = {
+	'ray-x/lsp_signature.nvim',
+	event = 'InsertEnter',
+	opts = {
+		bind = true,
+		toggle_key = '<C-s>',
+		hint_enable = false,
+		handler_opts = {
+			border = 'none',
+		}
+	}
+}
+
 -- Lazy Setup
 local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
 
@@ -211,12 +301,15 @@ lazy.setup({
 	guess_indent_plugin,
 	luasnip_plugin,
 	gitsigns_plugin,
+	dap_plugin,
+	dapui_plugin,
+	lsp_signature,
 }, {})
 
 -- Diagnostics
 vim.diagnostic.config({
 	virtual_text = {
-		enable = true
+		enable = true,
 	},
 	underline = true
 })
@@ -225,10 +318,33 @@ vim.diagnostic.config({
 vim.keymap.set('n', 'vv', 'v', { desc = 'Visual Mode' })
 vim.keymap.set('n', 'vl', '<S-v>', { desc = 'Visual Line Mode' })
 vim.keymap.set('n', 'vb', '<C-v>', { desc = 'Visual Block Mode' })
-vim.keymap.set('n', '<C-l>', 'gt', { desc = 'Next Tab' })
-vim.keymap.set('n', '<C-h>', 'gT', { desc = 'Previous Tab' })
 vim.keymap.set('n', 'j', 'gj', { desc = 'Move Down (including wrapped single line)' })
 vim.keymap.set('n', 'k', 'gk', { desc = 'Move Up (including wrapped single line)' })
+vim.keymap.set('n', '<escape>', ':noh<CR>')
+
+local hmove = function(direction)
+	return function()
+		local previous_window_id = vim.api.nvim_get_current_win()
+
+		local key = direction > 0 and 'l' or 'h'
+		vim.cmd('wincmd ' .. key)
+
+		local new_window_id = vim.api.nvim_get_current_win()
+		if previous_window_id == new_window_id then
+			local tab_command = direction > 0 and 'tabnext' or 'tabprevious'
+			vim.cmd(tab_command)
+		end
+	end
+end
+
+vim.keymap.set('n', 'H', hmove(-1), { desc = 'Navigate Left' })
+vim.keymap.set('n', 'J', ':wincmd j<CR>', { desc = 'Navigate Down' })
+vim.keymap.set('n', 'K', ':wincmd k<CR>', { desc = 'Navigate Up' })
+vim.keymap.set('n', 'L', hmove(1), { desc = 'Navigate Right' })
+vim.keymap.set('n', '<C-h>', ':vsplit<CR>', { desc = 'Split Left' })
+vim.keymap.set('n', '<C-j>', ':split<CR>:wincmd j<CR>', { desc = 'Split Down' })
+vim.keymap.set('n', '<C-k>', ':split<CR>', { desc = 'Split Up' })
+vim.keymap.set('n', '<C-l>', ':vsplit<CR>:wincmd l<CR>', { desc = 'Split Right' })
 
 -- Theme
 local theme_normal_background = '#0a1924'
@@ -258,3 +374,22 @@ vim.api.nvim_set_hl(0, 'Statement', { fg = theme_keyword_foreground })
 vim.api.nvim_set_hl(0, 'PreProc', { fg = theme_keyword_foreground })
 
 vim.api.nvim_set_hl(0, '@constant.odin', { fg = theme_normal_foreground })
+
+-- Project Settings
+vim.api.nvim_create_autocmd({ 'VimEnter', 'DirChanged' }, {
+	pattern = '*',
+	desc = 'Run local project nvim settings in .nvim/init.lua',
+	callback = function()
+		local cwd = vim.fn.getcwd()
+		if cwd == vim.g.project_settings_cwd then
+			return
+		end
+
+		vim.g.project_settings_cwd = cwd
+
+		local init_file = cwd .. '/.nvim/init.lua'
+		if vim.fn.filereadable(init_file) == 1 then
+			vim.cmd('luafile ' .. init_file)
+		end
+	end
+})
