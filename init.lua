@@ -10,6 +10,7 @@ vim.opt.shiftwidth = 2
 vim.opt.expandtab = false
 vim.opt.colorcolumn = '81,121'
 vim.opt.number = true
+vim.opt.fixendofline = false
 
 -- Treesitter
 local treesitter_plugin = {
@@ -58,6 +59,19 @@ local lspconfig_plugin = {
 		lspconfig.gdscript.setup({})
 		lspconfig.ts_ls.setup({})
 		lspconfig.somesass_ls.setup({})
+
+		local eslint_base_on_attach = vim.lsp.config.eslint.on_attach
+		lspconfig.eslint.setup({
+			on_attach = function(client, bufnr)
+				if not eslint_base_on_attach then return end
+
+				eslint_base_on_attach(client, bufnr)
+				vim.api.nvim_create_autocmd('BufWritePre', {
+					buffer = bufnr,
+					command = 'LspEslintFixAll'
+				})
+			end
+		})
 
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to Definition' })
 		vim.keymap.set('n', 'gg', vim.lsp.buf.hover, { desc = 'LSP Display Info' })
