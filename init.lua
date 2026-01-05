@@ -137,7 +137,8 @@ local autopairs_plugin = {
 local telescope_plugin = {
 	'nvim-telescope/telescope.nvim',
 	dependencies = {
-		'nvim-lua/plenary.nvim'
+		'nvim-lua/plenary.nvim',
+		'nvim-telescope/telescope-ui-select.nvim'
 	},
 	branch = '0.1.x',
 	config = function()
@@ -151,8 +152,15 @@ local telescope_plugin = {
 					hidden = true,
 					no_ignore = true
 				}
+			},
+			extensions = {
+				['ui-select'] = {
+					require('telescope.themes').get_dropdown({})
+				}
 			}
 		})
+
+		telescope.load_extension('ui-select')
 
 		local telescope_builtin = require('telescope.builtin')
 		vim.keymap.set('n', '<C-p>', telescope_builtin.find_files, { desc = 'Find Files' })
