@@ -20,20 +20,12 @@ local treesitter_plugin = {
 		'nvim-treesitter/nvim-treesitter-textobjects',
 	},
 	config = function()
-		local treesitter_configs = require('nvim-treesitter.configs')
-		treesitter_configs.setup({
-			highlight = { enable = true },
-			textobjects = { enable = true },
-			ensure_installed = {
-				'lua',
-				'odin',
-				'typescript',
-				'javascript'
-			},
-			sync_install = false,
-			auto_install = true,
-			ignore_install = {},
-			modules = {},
+		local treesitter = require('nvim-treesitter')
+		treesitter.install({
+			'lua',
+			'odin',
+			'typescript',
+			'javascript'
 		})
 	end
 }
