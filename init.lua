@@ -21,11 +21,19 @@ local treesitter_plugin = {
 	},
 	config = function()
 		local treesitter = require('nvim-treesitter')
+
 		treesitter.install({
 			'lua',
 			'odin',
 			'typescript',
 			'javascript'
+		})
+
+		vim.api.nvim_create_autocmd('FileType', {
+			pattern = { 'lua', 'odin', 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
+			callback = function()
+				vim.treesitter.start()
+			end
 		})
 	end
 }
@@ -45,25 +53,24 @@ local lazydev_plugin = {
 local lspconfig_plugin = {
 	'neovim/nvim-lspconfig',
 	config = function()
-		local lspconfig = require('lspconfig')
-		lspconfig.ols.setup({})
-		lspconfig.lua_ls.setup({})
-		lspconfig.gdscript.setup({})
-		lspconfig.ts_ls.setup({})
-		lspconfig.somesass_ls.setup({})
+		vim.lsp.enable('eslint')
+		vim.lsp.enable('ols')
+		vim.lsp.enable('lua_ls')
+		vim.lsp.enable('gdscript')
+		vim.lsp.enable('ts_ls')
+		vim.lsp.enable('somesass_ls')
 
 		local eslint_base_on_attach = vim.lsp.config.eslint.on_attach
-		lspconfig.eslint.setup({
-			on_attach = function(client, bufnr)
-				if not eslint_base_on_attach then return end
-
+		vim.lsp.config.eslint.on_attach = function(client, bufnr)
+			if eslint_base_on_attach ~= nil then
 				eslint_base_on_attach(client, bufnr)
-				vim.api.nvim_create_autocmd('BufWritePre', {
-					buffer = bufnr,
-					command = 'LspEslintFixAll'
-				})
 			end
-		})
+
+			vim.api.nvim_create_autocmd('BufWritePre', {
+				buffer = bufnr,
+				command = 'LspEslintFixAll'
+			})
+		end
 
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to Definition' })
 		vim.keymap.set('n', 'gg', vim.lsp.buf.hover, { desc = 'LSP Display Info' })
@@ -137,7 +144,10 @@ local telescope_plugin = {
 		local telescope = require('telescope')
 		telescope.setup({
 			defaults = {
-				file_ignore_patterns = { '.git[\\/].*', 'node_modules' }
+				file_ignore_patterns = { '.git[\\/].*', 'node_modules' },
+				preview = {
+					treesitter = false,
+				}
 			},
 			pickers = {
 				find_files = {
