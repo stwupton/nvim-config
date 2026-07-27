@@ -16,6 +16,8 @@ vim.opt.fixendofline = false
 local treesitter_plugin = {
 	'nvim-treesitter/nvim-treesitter',
 	build = ':TSUpdate',
+	branch = 'main',
+	lazy = false,
 	dependencies = {
 		'nvim-treesitter/nvim-treesitter-textobjects',
 	},
