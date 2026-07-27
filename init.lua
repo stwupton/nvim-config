@@ -32,7 +32,7 @@ local treesitter_plugin = {
 		})
 
 		vim.api.nvim_create_autocmd('FileType', {
-			pattern = { 'lua', 'odin', 'typescript', 'typescriptreact', 'javascript', 'javascriptreact' },
+			pattern = { '<filetype>' },
 			callback = function()
 				vim.treesitter.start()
 			end
@@ -141,7 +141,7 @@ local telescope_plugin = {
 		'nvim-lua/plenary.nvim',
 		'nvim-telescope/telescope-ui-select.nvim'
 	},
-	branch = '0.1.x',
+	tag = 'v0.2.2',
 	config = function()
 		local telescope = require('telescope')
 		telescope.setup({
